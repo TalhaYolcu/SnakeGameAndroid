@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -12,9 +13,10 @@ import android.view.View;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class GameView extends View {
-    private Bitmap bmGrass1,bmGrass2,bmSnake;
+    private Bitmap bmGrass1,bmGrass2,bmSnake,bmApple;
     public static int sizeOfMap=75*Constants.SCREEN_WIDTH/1080;
     private int h=21,w=12;
     private ArrayList<Grass> arrGrass=new ArrayList<>();
@@ -23,6 +25,7 @@ public class GameView extends View {
     private float mx,my;
     private Runnable r;
     private android.os.Handler handler;
+    private Apple apple;
 
 
     public GameView(Context context, @Nullable AttributeSet attrs) {
@@ -36,7 +39,8 @@ public class GameView extends View {
         bmSnake= BitmapFactory.decodeResource(this.getResources(),R.drawable.snake1);
         bmSnake=Bitmap.createScaledBitmap(bmSnake,14*sizeOfMap,sizeOfMap,true);
 
-
+        bmApple= BitmapFactory.decodeResource(this.getResources(),R.drawable.apple);
+        bmApple=Bitmap.createScaledBitmap(bmApple,sizeOfMap,sizeOfMap,true);
         for (int i=0;i<h;i++) {
             for (int j=0;j<w;j++) {
                 if((i+j)%2==0) {
@@ -49,6 +53,8 @@ public class GameView extends View {
             }
         }
         snake=new Snake(bmSnake,arrGrass.get(126).getX(),arrGrass.get(126).getY(),4);
+
+        apple=new Apple(bmApple,arrGrass.get(randomApple()[0]).getX(),arrGrass.get(randomApple()[1]).getY());
 
         handler=new Handler();
         r=new Runnable() {
@@ -112,6 +118,32 @@ public class GameView extends View {
         }
         snake.update();
         snake.draw(canvas);
+        apple.draw(canvas);
+        if(snake.getArrPartSnake().get(0).getrBody().intersect(apple.getR())) {
+            randomApple();
+            apple.reset(arrGrass.get(randomApple()[0]).getX(),arrGrass.get(randomApple()[1]).getY());
+            snake.addPart();
+        }
         handler.postDelayed(r,100);
+    }
+    public int[] randomApple() {
+        int[] xy=new int[2];
+        Random r=new Random();
+        xy[0]=r.nextInt(arrGrass.size()-1);
+        xy[1]=r.nextInt(arrGrass.size()-1);
+        Rect rect=new Rect(arrGrass.get(xy[0]).getX(),arrGrass.get(xy[1]).getY(),arrGrass.get(xy[0]).getX()+sizeOfMap,arrGrass.get(xy[1]).getY()+sizeOfMap);
+        boolean check=true;
+        while (check) {
+            check=false;
+            for(int i=0;i<snake.getArrPartSnake().size();i++) {
+                if(rect.intersect(snake.getArrPartSnake().get(i).getrBody())) {
+                    check=true;
+                    xy[0]=r.nextInt(arrGrass.size()-1);
+                    xy[1]=r.nextInt(arrGrass.size()-1);
+                    rect=new Rect(arrGrass.get(xy[0]).getX(),arrGrass.get(xy[1]).getY(),arrGrass.get(xy[0]).getX()+sizeOfMap,arrGrass.get(xy[1]).getY()+sizeOfMap);
+                }
+            }
+        }
+        return xy;
     }
 }
